@@ -33,7 +33,7 @@ static void Baidu_AI(camera_fb_t* &fb){
         Serial.println("Connection succeeded");
         client.println("POST /rest/2.0/face/v3/search?access_token=" + String(ACCESS_TOKEN) + " HTTP/1.1");
         client.println(F("Host: aip.baidubce.com"));
-        client.println("Content-Length: " + String(base64_enc_len(fb->len) + len(Json_begin Json_end)));
+        client.println("Content-Length: " + String(base64_enc_len(fb->len) + strlen(Json_begin Json_end)));
         client.println(F("Content-Type: application/json"));
         client.println();
         client.print(F(Json_begin));
