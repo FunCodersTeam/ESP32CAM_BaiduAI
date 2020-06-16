@@ -28,17 +28,24 @@
 #define PCLK_GPIO_NUM     22
 
 static void Baidu_AI(camera_fb_t* &fb){
+    String base64 = base64::encode(fb->buf,fb->len);
+    uint16_t len = base64.length();
     WiFiClientSecure client;
     if(client.connect("aip.baidubce.com",443)){
         Serial.println("Connection succeeded");
         client.println("POST /rest/2.0/face/v3/search?access_token=" + String(ACCESS_TOKEN) + " HTTP/1.1");
         client.println(F("Host: aip.baidubce.com"));
-        client.println("Content-Length: " + String(base64_enc_len(fb->len) + strlen(Json_begin Json_end)));
+        client.println("Content-Length: " + String(len + strlen(Json_begin Json_end)));
         client.println(F("Content-Type: application/json"));
         client.println();
         client.print(F(Json_begin));
-        for (int i = 0; i < fb->len; i += 3) //∑÷∂Œ∑¢ÀÕ
-        client.print(base64::encode((fb->buf + i),3));
+        for(uint16_t i = 0;i < len;i += 4096) //ÂàÜÊÆµÂèëÈÄÅ
+        if(len > i + 4096)
+        client.print(base64.substring(i,i+4096));
+        else{
+            client.print(base64.substring(i));
+            break;
+        }
         client.print(F(Json_end));
         Serial.println("Waiting for response...");
         uint8_t i = 0;
@@ -58,14 +65,9 @@ static void Baidu_AI(camera_fb_t* &fb){
         }else Serial.println("Connection failed");
 }
 
-//º∆À„base64±‡¬Î∫Ûµƒ≥§∂»
-__attribute__((always_inline)) int base64_enc_len(int len) {
-  return (len + 2 - ((len + 2) % 3)) / 3 * 4;
-}
-
 void setup()
 {
-    WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG,0); //πÿ±’«∑—πºÏ≤‚
+    WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG,0); //ÂÖ≥Èó≠Ê¨†ÂéãÊ£ÄÊµã
     Serial.begin(115200);
     WiFi.begin(SSID,PASSWORD);
     while (WiFi.status() != WL_CONNECTED){
@@ -104,7 +106,7 @@ void setup()
 
 void loop()
 {
-    while(WiFi.status() != WL_CONNECTED){ //∂œœﬂ÷ÿ¡¨
+    while(WiFi.status() != WL_CONNECTED){ //Êñ≠Á∫øÈáçËøû
         WiFi.reconnect();
         delay(500);
     }
